@@ -1,0 +1,73 @@
+.header {
+  background: white;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header__title {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-toggle.active {
+  background: #007bff;
+  color: white;
+  border-color: #0056b3;
+}
+
+.filter-toggle:hover {
+  background: #f5f5f5;
+}
+
+.filter-toggle.active:hover {
+  background: #0056b3;
+}
+
+.header__right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.auth-button {
+  padding: 0.5rem 1rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-button:hover {
+  background: #0056b3;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-email {
+  color: #666;
+} 

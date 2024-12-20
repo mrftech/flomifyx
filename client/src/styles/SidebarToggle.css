@@ -1,0 +1,37 @@
+.sidebar-toggle {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: white;
+  border: 1px solid #ddd;
+  border-left: none;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  border-radius: 0 4px 4px 0;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  z-index: 99;
+}
+
+.sidebar-toggle.open {
+  left: 250px;
+}
+
+.sidebar-toggle:hover {
+  background: #f5f5f5;
+}
+
+/* Hide text on mobile */
+@media (max-width: 768px) {
+  .sidebar-toggle span {
+    display: none;
+  }
+  
+  .sidebar-toggle {
+    padding: 8px;
+  }
+} 

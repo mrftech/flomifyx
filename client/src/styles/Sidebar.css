@@ -1,0 +1,156 @@
+.sidebar {
+  width: 250px;
+  min-width: 250px;
+  padding: 20px;
+  background: white;
+  border-right: 1px solid #eee;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+}
+
+.filter-section {
+  margin-bottom: 24px;
+}
+
+.filter-section h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: #333;
+}
+
+.filter-section select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.radio-group,
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.radio-group label,
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-filter {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag-filter.active {
+  background: #007bff;
+  color: white;
+  border-color: #0056b3;
+}
+
+.sidebar__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.sidebar__header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+.reset-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reset-button:hover {
+  background: #f5f5f5;
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.reset-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.filter-section select option {
+  padding: 8px;
+}
+
+.filter-section select:hover {
+  border-color: #007bff;
+}
+
+.show-more-button {
+  width: 100%;
+  padding: 8px;
+  margin-top: 12px;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.show-more-button:hover {
+  background: #f5f5f5;
+  color: #333;
+  border-color: #ccc;
+}
+
+.tags-container {
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-right: -4px;
+}
+
+.tags-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.tags-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.tags-container::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 4px;
+}
+
+.tags-container::-webkit-scrollbar-thumb:hover {
+  background: #ccc;
+} 

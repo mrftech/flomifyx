@@ -20,13 +20,8 @@ export interface Item {
   created_at: string;
   name: string;
   description: string;
-  category_id: string;
-  license_id: string;
-  thumbnail_url?: string;
-  live_preview?: string;
-  purchase_link?: string;
-  tags: string[];
-  platform_data?: Record<string, any>;
+  category: string;
+  image_url?: string;
 }
 
 // Utility function for error handling

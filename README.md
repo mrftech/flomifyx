@@ -663,3 +663,254 @@ npm run build
    - Update documentation
    - Monitor for issues
    - Plan preventive measures
+
+## Command Reference Guide
+
+### Initial Setup Commands
+```bash
+# Clone the repository
+git clone https://github.com/your-username/your-repo.git
+
+# Install dependencies for all workspaces
+npm install
+
+# Set up environment variables
+cp client/.env.example client/.env
+cp server/.env.example server/.env
+```
+
+### Development Commands
+```bash
+# Start all development servers
+npm run dev
+
+# Start only client
+npm run dev:client
+
+# Start only server
+npm run dev:server
+
+# Clean all dependencies
+npm run clean
+
+# Build all packages
+npm run build
+```
+
+### Git Commands
+```bash
+# Initialize repository
+git init
+
+# Add remote origin
+git remote add origin https://github.com/your-username/your-repo.git
+
+# Create and switch to main branch
+git branch -M main
+
+# Stage all changes
+git add .
+
+# Commit changes
+git commit -m "type(scope): description"
+
+# Push to GitHub
+git push -u origin main
+
+# Create and switch to feature branch
+git checkout -b feature/name
+
+# Create and push tag
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+### Version Management Commands
+```bash
+# View current version
+npm version
+
+# Create patch version (bug fixes)
+npm run version:patch
+
+# Create minor version (new features)
+npm run version:minor
+
+# Create major version (breaking changes)
+npm run version:major
+
+# Generate changelog
+npm run changelog
+
+# Create full release
+npm run release
+```
+
+### Deployment Commands
+```bash
+# Build for production
+npm run build
+
+# Start production server
+npm run start:prod
+
+# Deploy to Coolify (via GitHub Actions)
+git push origin main
+```
+
+### Database Commands
+```bash
+# Reset database to specific version
+supabase db reset --version v1.0.0
+
+# Start local Supabase
+supabase start
+
+# Stop local Supabase
+supabase stop
+```
+
+### Version Restoration Commands
+```bash
+# List all versions
+git tag -l
+
+# View version history
+git log --oneline --tags --no-walk --decorate
+
+# Create restoration branch
+git checkout -b restore/v1.0.0 v1.0.0
+
+# Hard reset to version
+git reset --hard v1.0.0
+
+# Revert to version
+git revert --no-commit v1.1.0..HEAD
+git commit -m "revert: restore to version 1.0.0"
+
+# Push restored version
+git push origin restore/v1.0.0
+```
+
+### Testing Commands
+```bash
+# Run all tests
+npm test
+
+# Run specific workspace tests
+npm test --workspace=client
+npm test --workspace=server
+
+# Run tests with coverage
+npm test -- --coverage
+```
+
+### Maintenance Commands
+```bash
+# Check for outdated packages
+npm outdated
+
+# Update packages
+npm update
+
+# Clean install
+npm ci
+
+# Audit dependencies
+npm audit
+
+# Fix audit issues
+npm audit fix
+```
+
+### Environment Commands
+```bash
+# List all environment variables
+printenv
+
+# Set environment variable
+export KEY=value
+
+# Load environment variables
+source .env
+```
+
+### Troubleshooting Commands
+```bash
+# Check Node.js version
+node --version
+
+# Check npm version
+npm --version
+
+# Check git version
+git --version
+
+# View npm logs
+npm logs
+
+# Clear npm cache
+npm cache clean --force
+
+# List global packages
+npm list -g --depth=0
+```
+
+### Docker Commands (if using Docker)
+```bash
+# Build Docker image
+docker build -t your-app-name .
+
+# Run Docker container
+docker run -p 3000:3000 your-app-name
+
+# View Docker logs
+docker logs container-id
+
+# Stop Docker container
+docker stop container-id
+```
+
+### Common Command Combinations
+
+#### New Feature Development
+```bash
+git checkout -b feature/new-feature
+npm install
+npm run dev
+# Make changes
+git add .
+git commit -m "feat: add new feature"
+git push origin feature/new-feature
+```
+
+#### Quick Bug Fix
+```bash
+git checkout -b bugfix/issue-name
+# Fix issue
+npm test
+git add .
+git commit -m "fix: resolve issue"
+git push origin bugfix/issue-name
+```
+
+#### Emergency Rollback
+```bash
+git tag -l
+git checkout v1.0.0
+git checkout -b rollback/v1.0.0
+npm install
+npm run build
+git push origin rollback/v1.0.0
+```
+
+#### Version Update
+```bash
+npm run test
+npm run version:patch
+npm run changelog
+git add .
+git commit -m "chore(release): version 1.0.1"
+git push origin main
+git push origin --tags
+```

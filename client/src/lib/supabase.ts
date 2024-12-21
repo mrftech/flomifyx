@@ -17,8 +17,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     flowType: 'pkce',
     storage: window.localStorage,
     emailAuth: {
-      redirectTo: redirectUrl,
+      redirectTo: `${redirectUrl}/auth/callback`,
       autoConfirm: false,
+    },
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'supabase-js-v2',
     },
   },
 });
@@ -66,11 +71,10 @@ export const signUpWithEmail = async (email: string, password: string) => {
       email,
       password,
       options: {
-        emailRedirectTo: redirectUrl,
+        emailRedirectTo: `${redirectUrl}/auth/callback`,
         data: {
           name: email.split('@')[0],
         },
-        emailTemplate: 'signup',
       },
     });
     
@@ -85,6 +89,7 @@ export const signUpWithEmail = async (email: string, password: string) => {
     
     return data;
   } catch (error) {
+    console.error('Sign up error:', error);
     handleSupabaseError(error);
     return null;
   }
@@ -92,24 +97,35 @@ export const signUpWithEmail = async (email: string, password: string) => {
 
 export const sendMagicLink = async (email: string) => {
   try {
+    // First check if the user exists
+    const { data: { users }, error: userError } = await supabase.auth.admin.listUsers({
+      filters: {
+        email: email,
+      },
+    });
+
+    const userExists = users && users.length > 0;
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: redirectUrl,
-        shouldCreateUser: true,
-        data: {
+        emailRedirectTo: `${redirectUrl}/auth/callback`,
+        shouldCreateUser: !userExists, // Only create if user doesn't exist
+        data: userExists ? undefined : {
           name: email.split('@')[0],
         },
-        emailTemplate: 'magic-link',
       },
     });
 
     if (error) throw error;
+    
     return { 
       success: true,
-      message: 'Check your email for the magic link.'
+      message: 'Check your email for the magic link.',
+      isNewUser: !userExists
     };
   } catch (error) {
+    console.error('Magic link error:', error);
     handleSupabaseError(error);
     return null;
   }

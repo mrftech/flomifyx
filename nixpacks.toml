@@ -3,14 +3,16 @@ nixPkgs = ['nodejs-18_x']
 
 [phases.install]
 cmds = [
+    'npm install --prefix shared',
     'npm install --prefix server',
     'npm install --prefix client'
 ]
 
 [phases.build]
 cmds = [
-    'npm run build --prefix server',
-    'npm run build --prefix client'
+    'cd shared && npx tsc',
+    'cd ../server && npm run build',
+    'cd ../client && npm run build'
 ]
 
 [start]

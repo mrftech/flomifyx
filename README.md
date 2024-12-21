@@ -1,916 +1,139 @@
-# Pixel Library Project
+# Pixel Library
 
-## Project Overview
-A modern web application built with React, Node.js, and Supabase, featuring a pixel art library management system.
+A full-stack web application for managing and organizing pixel art assets.
 
-## Technology Stack
-- **Frontend**: React with Vite
-- **Backend**: Node.js with Express
-- **Database**: Supabase
-- **Deployment**: Coolify
-- **Version Control**: GitHub
-- **CI/CD**: GitHub Actions
+## Project Structure
+```
+├── client/             # Frontend React application
+├── server/             # Backend Express server
+├── shared/            # Shared utilities and types
+└── database/           # Database migrations and schema
+```
 
-## Development Journey
+## Prerequisites
+- Node.js >= 14
+- npm >= 6
 
-### 1. Initial Setup
-- Created React frontend with Vite
-- Set up Node.js backend with Express
-- Integrated Supabase for database management
-- Configured TypeScript for type safety
-- Implemented monorepo structure with shared types
+## Getting Started
 
-### 2. Key Implementation Details
-- Configured shared TypeScript definitions
-- Set up environment variables for different environments
-- Implemented Supabase client with error handling
-- Created API endpoints for data management
-- Added proper error logging and monitoring
-
-### 3. Deployment Process
-
-#### GitHub Setup
-1. Created new repository
-2. Added remote origin
-3. Configured branch protection rules
-4. Set up GitHub Actions workflow
-
-#### Coolify Deployment
-1. Installed Coolify on server
-2. Connected GitHub repository
-3. Configured environment variables
-4. Set up build and deployment process
-
-### 4. Environment Configuration
-
-#### Development Environment
+1. Install dependencies:
 ```bash
-# client/.env
+npm run install:all
+```
+
+2. Set up environment variables:
+- Copy `.env.example` to `.env` in both client and server directories
+- Update the values as needed
+
+3. Start development servers:
+```bash
+npm run dev
+```
+
+This will start both the client (Vite) and server (Express) in development mode.
+
+## Available Scripts
+
+- `npm run dev` - Start both client and server in development mode
+- `npm run dev:client` - Start only the client
+- `npm run dev:server` - Start only the server
+- `npm run build` - Build the project for production
+- `npm start` - Start the production server
+- `npm run lint` - Run linting
+- `npm test` - Run tests
+- `npm run clean` - Clean up node_modules
+
+## Production Deployment
+
+### Prerequisites
+1. Set up a production server
+2. Configure SSL/HTTPS
+3. Set up domain and DNS
+4. Configure database
+
+### Deployment Steps
+
+1. Build the project:
+```bash
+npm run build
+```
+
+2. Set environment variables:
+```bash
+# Server
+PORT=3000
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_KEY=your_supabase_service_key
+CORS_ORIGIN=https://your-domain.com
+
+# Client
 VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_anon_key
-
-# server/.env
-PORT=3000
-NODE_ENV=development
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_API_URL=https://api.your-domain.com
 ```
 
-#### Production Environment
+3. Start the server:
 ```bash
-# client/.env.production
-VITE_SUPABASE_URL=production_supabase_url
-VITE_SUPABASE_ANON_KEY=production_anon_key
-
-# server/.env.production
-PORT=3000
-NODE_ENV=production
+npm start
 ```
 
-### 5. Deployment Configuration
+### Server Configuration
 
-#### Nixpacks Configuration
-```toml
-[phases.setup]
-nixPkgs = ['nodejs-18_x']
+#### Nginx Configuration
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    return 301 https://$server_name$request_uri;
+}
 
-[phases.install]
-cmds = [
-  'npm install --prefix server',
-  'npm install --prefix client'
-]
+server {
+    listen 443 ssl;
+    server_name your-domain.com;
 
-[phases.build]
-cmds = [
-  'npm run build --prefix client',
-  'npm run build --prefix server'
-]
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
 
-[start]
-cmd = 'cd server && npm start'
+    # Client files
+    location / {
+        root /path/to/client/dist;
+        try_files $uri $uri/ /index.html;
+        expires 30d;
+        add_header Cache-Control "public, no-transform";
+    }
+
+    # API proxy
+    location /api {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
 ```
 
-#### Procfile
-```
-web: cd server && npm start
-```
+### Monitoring Setup
 
-## Lessons Learned
+1. Error Tracking:
+   - Set up Sentry or similar service
+   - Add error boundaries in React
+   - Configure server-side error logging
 
-1. **Environment Configuration**
-   - Keep sensitive data in environment variables
-   - Use different configurations for development and production
-   - Properly handle environment variables in the build process
+2. Performance Monitoring:
+   - Set up New Relic or similar
+   - Configure server metrics
+   - Monitor database performance
 
-2. **Error Handling**
-   - Implement comprehensive error handling
-   - Add proper logging for debugging
-   - Test connection to external services during startup
-
-3. **Deployment Best Practices**
-   - Use proper build configuration for production
-   - Implement health checks
-   - Configure proper environment variables in deployment platform
-   - Set up proper monitoring and logging
-
-4. **Version Control**
-   - Keep sensitive files out of version control
-   - Use proper .gitignore configuration
-   - Implement proper branching strategy
-
-## Future Improvements
-
-1. **Monitoring and Logging**
-   - Implement centralized logging solution
-   - Add performance monitoring
-   - Set up alerting for critical errors
-
-2. **Security**
-   - Implement rate limiting
-   - Add security headers
+3. Security:
    - Regular security audits
-
-3. **Performance**
-   - Implement caching strategy
-   - Optimize build process
-   - Add CDN for static assets
-
-## Quick Start
-
-1. Clone the repository:
-```bash
-git clone https://github.com/your-username/your-repo.git
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Set up environment variables:
-```bash
-cp client/.env.example client/.env
-cp server/.env.example server/.env
-```
-
-4. Start development servers:
-```bash
-# Terminal 1
-cd client && npm run dev
-
-# Terminal 2
-cd server && npm run dev
-```
-
-5. Build for production:
-```bash
-npm run build
-```
-
-## Deployment
-
-1. Push to GitHub:
-```bash
-git add .
-git commit -m "Your commit message"
-git push origin main
-```
-
-2. Deploy to Coolify:
-   - Connect your GitHub repository
-   - Configure environment variables
-   - Deploy the application
-
-## Troubleshooting
-
-Common issues and their solutions:
-
-1. **404 Not Found**
-   - Check if the server is running
-   - Verify API endpoints
-   - Check routing configuration
-
-2. **Environment Variables**
-   - Ensure all required variables are set
-   - Check for proper formatting
-   - Verify production variables in Coolify
-
-3. **Build Issues**
-   - Clear node_modules and reinstall
-   - Check build logs
-   - Verify dependencies
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Deployment Issues and Solutions
-
-### 1. Nixpacks Configuration Error
-**Error:**
-```
-error: undefined variable 'npm'
-```
-
-**Solution:**
-- Updated `nixpacks.toml` to use correct Node.js package:
-```toml
-[phases.setup]
-nixPkgs = ['nodejs-18_x']  # Changed from ['nodejs', 'npm']
-```
-
-### 2. Directory Path Error
-**Error:**
-```
-/bin/bash: line 1: cd: ../client: No such file or directory
-```
-
-**Solution:**
-- Fixed installation commands in `nixpacks.toml` to use correct paths:
-```toml
-[phases.install]
-cmds = [
-  'npm install --prefix server',
-  'npm install --prefix client'
-]
-```
-
-### 3. Missing Start Script
-**Error:**
-```
-Missing script: 'start:prod'
-```
-
-**Solution:**
-- Added missing script to `server/package.json`:
-```json
-{
-  "scripts": {
-    "start": "node dist/index.js",
-    "start:prod": "node dist/index.js"
-  }
-}
-```
-
-### 4. Supabase Connection Error
-**Error:**
-```
-Uncaught Error: supabaseUrl is required
-```
-
-**Solution:**
-1. Added proper environment variables in Coolify:
-```env
-VITE_SUPABASE_URL=https://supabase.flomify.com
-VITE_SUPABASE_ANON_KEY=your_anon_key
-```
-
-2. Enhanced error handling in Supabase client:
-```typescript
-// client/src/lib/supabase.ts
-if (!supabaseUrl) {
-  console.error('Missing VITE_SUPABASE_URL environment variable');
-  throw new Error('Missing VITE_SUPABASE_URL environment variable');
-}
-```
-
-### 5. TypeScript Type Errors
-**Error:**
-```
-Could not find a declaration file for module 'express'
-```
-
-**Solution:**
-- Installed missing type definitions:
-```bash
-npm install --save-dev @types/express
-```
-
-### 6. Build Process Errors
-**Error:**
-```
-Failed to resolve import "react" from "src/App.tsx"
-```
-
-**Solution:**
-- Updated Vite configuration in `client/vite.config.js`:
-```javascript
-export default defineConfig({
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src')
-    }
-  }
-})
-```
-
-### 7. 404 Page Not Found
-**Error:**
-Application running but showing 404 errors
-
-**Solution:**
-1. Verified server routes are correctly configured
-2. Ensured static file serving is properly set up
-3. Added proper error handling middleware:
-```javascript
-// server/src/index.ts
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
-```
-
-### 8. Environment Variable Loading
-**Error:**
-```
-Error: Cannot find module 'dotenv'
-```
-
-**Solution:**
-1. Installed dotenv package:
-```bash
-npm install dotenv
-```
-
-2. Added proper environment loading:
-```javascript
-import dotenv from 'dotenv';
-dotenv.config();
-```
-
-### 9. CORS Issues
-**Error:**
-```
-Access to fetch at 'http://api.example.com' from origin 'http://localhost:3000' has been blocked by CORS policy
-```
-
-**Solution:**
-- Added proper CORS configuration:
-```javascript
-// server/src/index.ts
-import cors from 'cors';
-
-app.use(cors({
-  origin: process.env.CLIENT_URL,
-  credentials: true
-}));
-```
-
-### 10. Database Connection Issues
-**Error:**
-```
-Error: Failed to connect to Supabase
-```
-
-**Solution:**
-1. Added connection testing on startup:
-```typescript
-supabase.from('items').select('count', { count: 'exact', head: true })
-  .then(({ error }) => {
-    if (error) {
-      console.error('Failed to connect to Supabase:', error);
-    } else {
-      console.log('Successfully connected to Supabase');
-    }
-  });
-```
-
-2. Implemented retry logic for database operations:
-```typescript
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000;
-
-async function withRetry(operation: () => Promise<any>) {
-  for (let i = 0; i < MAX_RETRIES; i++) {
-    try {
-      return await operation();
-    } catch (error) {
-      if (i === MAX_RETRIES - 1) throw error;
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-    }
-  }
-}
-```
-
-## Best Practices for Error Prevention
-
-1. **Pre-deployment Checklist**
-   - Verify all environment variables are set
-   - Test build process locally
-   - Check all dependencies are installed
-   - Verify database connections
-
-2. **Monitoring Setup**
-   - Set up error tracking (e.g., Sentry)
-   - Configure application logging
-   - Set up performance monitoring
-   - Implement health checks
-
-3. **Deployment Process**
-   - Use staging environment
-   - Implement blue-green deployment
-   - Set up automated rollback
-   - Monitor deployment logs
-
-4. **Security Measures**
-   - Secure environment variables
-   - Implement rate limiting
-   - Set up proper CORS
-   - Regular security audits
-
-## Version Management
-
-### Versioning Strategy
-This project follows [Semantic Versioning](https://semver.org/) (SemVer):
-- MAJOR version (X.0.0) - incompatible API changes
-- MINOR version (0.X.0) - backwards-compatible functionality
-- PATCH version (0.0.X) - backwards-compatible bug fixes
-
-### Version Commands
-```bash
-# Patch version (bug fixes)
-npm run version:patch
-
-# Minor version (new features)
-npm run version:minor
-
-# Major version (breaking changes)
-npm run version:major
-
-# Generate/update changelog
-npm run changelog
-
-# Create a new release (includes build, test, and version bump)
-npm run release
-```
-
-### Release Process
-1. Make sure all changes are committed
-2. Run tests: `npm test`
-3. Update version:
-   ```bash
-   # For bug fixes
-   npm run version:patch
-   
-   # For new features
-   npm run version:minor
-   
-   # For breaking changes
-   npm run version:major
-   ```
-4. Update CHANGELOG.md: `npm run changelog`
-5. Review and commit changes
-6. Create a git tag: `git tag v1.x.x`
-7. Push changes and tags:
-   ```bash
-   git push origin main
-   git push origin --tags
-   ```
-8. Create a GitHub release
-9. Deploy to production
-
-### Version Control Guidelines
-1. **Commit Messages**
-   - Use conventional commits format
-   - Format: `type(scope): message`
-   - Types: feat, fix, docs, style, refactor, test, chore
-
-2. **Branch Strategy**
-   - `main` - production-ready code
-   - `develop` - development branch
-   - `feature/*` - new features
-   - `bugfix/*` - bug fixes
-   - `hotfix/*` - urgent production fixes
-
-3. **Release Tags**
-   - Use semantic versioning tags (v1.0.0)
-   - Include release notes
-   - Link to CHANGELOG.md
-
-4. **Version Files**
-   - package.json
-   - CHANGELOG.md
-   - Git tags
-   - GitHub releases
-
-### Maintaining Multiple Versions
-1. **Long-term Support (LTS)**
-   - Major versions supported for 12 months
-   - Security updates for 18 months
-   - Create branch `support/vX.Y.Z` for LTS versions
-
-2. **Hotfix Process**
-   1. Create hotfix branch from tag
-   2. Fix the issue
-   3. Update patch version
-   4. Merge to main and support branch
-   5. Create new release
-
-3. **Version Compatibility**
-   - Document breaking changes
-   - Provide migration guides
-   - Maintain API compatibility when possible
-
-4. **Documentation Versions**
-   - Tag documentation with versions
-   - Maintain separate docs for major versions
-   - Include upgrade guides
-
-### Version Restoration Guide
-
-#### 1. View Available Versions
-```bash
-# List all tags (versions)
-git tag -l
-
-# View commit history with version tags
-git log --oneline --tags --no-walk --decorate
-```
-
-#### 2. Restore to a Specific Version
-
-##### Method 1: Using Git Checkout
-```bash
-# Create a new branch from a specific version
-git checkout -b restore-branch v1.0.0
-
-# Or directly checkout the version (detached HEAD)
-git checkout v1.0.0
-```
-
-##### Method 2: Using Git Reset
-```bash
-# Soft reset (keeps changes in staging)
-git reset --soft v1.0.0
-
-# Hard reset (discards all changes)
-git reset --hard v1.0.0
-```
-
-##### Method 3: Using Git Revert
-```bash
-# Create a new commit that undoes changes
-git revert --no-commit v1.1.0..HEAD
-git commit -m "Revert to version 1.0.0"
-```
-
-#### 3. Restore Dependencies
-After restoring the version:
-```bash
-# Clean existing dependencies
-npm run clean
-
-# Reinstall dependencies
-npm install
-
-# Rebuild the project
-npm run build
-```
-
-#### 4. Database Restoration
-1. Check the database schema version in `migrations/`
-2. Restore database to matching version:
-   ```bash
-   # Using Supabase CLI
-   supabase db reset --version v1.0.0
-   ```
-
-#### 5. Environment Variables
-1. Check `.env.example` from the restored version
-2. Update your `.env` files accordingly
-3. Update environment variables in Coolify
-
-#### 6. Deployment After Restoration
-1. Test locally first
-2. Update deployment configuration if needed
-3. Deploy the restored version:
-   ```bash
-   git push origin restore-branch:main --force-with-lease
-   ```
-
-#### Common Restoration Scenarios
-
-1. **Hotfix Restoration**
-   ```bash
-   # Create hotfix branch from stable version
-   git checkout -b hotfix/v1.0.1 v1.0.0
-   
-   # Make fixes and update version
-   npm run version:patch
-   
-   # Push hotfix
-   git push origin hotfix/v1.0.1
-   ```
-
-2. **Emergency Rollback**
-   ```bash
-   # Quick rollback to last stable version
-   git reset --hard v1.0.0
-   git push origin main --force-with-lease
-   ```
-
-3. **Selective Feature Restoration**
-   ```bash
-   # Cherry-pick specific features
-   git checkout -b feature-restore main
-   git cherry-pick <commit-hash>
-   ```
-
-#### Post-Restoration Checklist
-
-1. **Verify Application State**
-   - Check application functionality
-   - Verify API endpoints
-   - Test database connections
-   - Check environment variables
-
-2. **Update Documentation**
-   - Update CHANGELOG.md
-   - Document the restoration
-   - Update version numbers
-
-3. **Dependencies Check**
-   - Verify package versions
-   - Check for security updates
-   - Test compatibility
-
-4. **Deployment Verification**
-   - Test in staging environment
-   - Verify production configuration
-   - Check monitoring systems
-
-#### Restoration Best Practices
-
-1. **Before Restoration**
-   - Create backup of current state
-   - Document reason for restoration
-   - Notify team members
-   - Plan maintenance window
-
-2. **During Restoration**
-   - Follow version control guidelines
-   - Test thoroughly
-   - Keep audit logs
-   - Monitor system health
-
-3. **After Restoration**
-   - Verify all systems
-   - Update documentation
-   - Monitor for issues
-   - Plan preventive measures
-
-## Command Reference Guide
-
-### Initial Setup Commands
-```bash
-# Clone the repository
-git clone https://github.com/your-username/your-repo.git
-
-# Install dependencies for all workspaces
-npm install
-
-# Set up environment variables
-cp client/.env.example client/.env
-cp server/.env.example server/.env
-```
-
-### Development Commands
-```bash
-# Start all development servers
-npm run dev
-
-# Start only client
-npm run dev:client
-
-# Start only server
-npm run dev:server
-
-# Clean all dependencies
-npm run clean
-
-# Build all packages
-npm run build
-```
-
-### Git Commands
-```bash
-# Initialize repository
-git init
-
-# Add remote origin
-git remote add origin https://github.com/your-username/your-repo.git
-
-# Create and switch to main branch
-git branch -M main
-
-# Stage all changes
-git add .
-
-# Commit changes
-git commit -m "type(scope): description"
-
-# Push to GitHub
-git push -u origin main
-
-# Create and switch to feature branch
-git checkout -b feature/name
-
-# Create and push tag
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-### Version Management Commands
-```bash
-# View current version
-npm version
-
-# Create patch version (bug fixes)
-npm run version:patch
-
-# Create minor version (new features)
-npm run version:minor
-
-# Create major version (breaking changes)
-npm run version:major
-
-# Generate changelog
-npm run changelog
-
-# Create full release
-npm run release
-```
-
-### Deployment Commands
-```bash
-# Build for production
-npm run build
-
-# Start production server
-npm run start:prod
-
-# Deploy to Coolify (via GitHub Actions)
-git push origin main
-```
-
-### Database Commands
-```bash
-# Reset database to specific version
-supabase db reset --version v1.0.0
-
-# Start local Supabase
-supabase start
-
-# Stop local Supabase
-supabase stop
-```
-
-### Version Restoration Commands
-```bash
-# List all versions
-git tag -l
-
-# View version history
-git log --oneline --tags --no-walk --decorate
-
-# Create restoration branch
-git checkout -b restore/v1.0.0 v1.0.0
-
-# Hard reset to version
-git reset --hard v1.0.0
-
-# Revert to version
-git revert --no-commit v1.1.0..HEAD
-git commit -m "revert: restore to version 1.0.0"
-
-# Push restored version
-git push origin restore/v1.0.0
-```
-
-### Testing Commands
-```bash
-# Run all tests
-npm test
-
-# Run specific workspace tests
-npm test --workspace=client
-npm test --workspace=server
-
-# Run tests with coverage
-npm test -- --coverage
-```
-
-### Maintenance Commands
-```bash
-# Check for outdated packages
-npm outdated
-
-# Update packages
-npm update
-
-# Clean install
-npm ci
-
-# Audit dependencies
-npm audit
-
-# Fix audit issues
-npm audit fix
-```
-
-### Environment Commands
-```bash
-# List all environment variables
-printenv
-
-# Set environment variable
-export KEY=value
-
-# Load environment variables
-source .env
-```
-
-### Troubleshooting Commands
-```bash
-# Check Node.js version
-node --version
-
-# Check npm version
-npm --version
-
-# Check git version
-git --version
-
-# View npm logs
-npm logs
-
-# Clear npm cache
-npm cache clean --force
-
-# List global packages
-npm list -g --depth=0
-```
-
-### Docker Commands (if using Docker)
-```bash
-# Build Docker image
-docker build -t your-app-name .
-
-# Run Docker container
-docker run -p 3000:3000 your-app-name
-
-# View Docker logs
-docker logs container-id
-
-# Stop Docker container
-docker stop container-id
-```
-
-### Common Command Combinations
-
-#### New Feature Development
-```bash
-git checkout -b feature/new-feature
-npm install
-npm run dev
-# Make changes
-git add .
-git commit -m "feat: add new feature"
-git push origin feature/new-feature
-```
-
-#### Quick Bug Fix
-```bash
-git checkout -b bugfix/issue-name
-# Fix issue
-npm test
-git add .
-git commit -m "fix: resolve issue"
-git push origin bugfix/issue-name
-```
-
-#### Emergency Rollback
-```bash
-git tag -l
-git checkout v1.0.0
-git checkout -b rollback/v1.0.0
-npm install
-npm run build
-git push origin rollback/v1.0.0
-```
-
-#### Version Update
-```bash
-npm run test
-npm run version:patch
-npm run changelog
-git add .
-git commit -m "chore(release): version 1.0.1"
-git push origin main
-git push origin --tags
-```
+   - Keep dependencies updated
+   - Monitor for vulnerabilities
+
+## Tech Stack
+
+- Frontend: React, Vite
+- Backend: Express.js
+- Database: PostgreSQL with Supabase
+- Styling: CSS Modules

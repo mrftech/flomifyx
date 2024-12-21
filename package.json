@@ -1,35 +1,24 @@
 {
-  "name": "pixel-library",
+  "name": "pixellibrary",
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "client",
+    "shared",
     "server",
-    "shared"
+    "client"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
-    "dev:client": "npm run dev --workspace=client",
-    "dev:server": "npm run dev --workspace=server",
-    "build": "npm run build:shared && npm run build:client && npm run build:server",
-    "build:client": "npm run build --workspace=client",
-    "build:server": "npm run build --workspace=server",
-    "build:shared": "npm run build --workspace=shared",
-    "start": "npm run start --workspace=server",
-    "clean": "npm run clean:client && npm run clean:server && npm run clean:shared",
-    "clean:client": "rimraf client/node_modules client/dist",
-    "clean:server": "rimraf server/node_modules server/dist",
-    "clean:shared": "rimraf shared/node_modules shared/dist",
-    "version:patch": "npm version patch -m \"Bump version to %s\" --workspaces",
-    "version:minor": "npm version minor -m \"Bump version to %s\" --workspaces",
-    "version:major": "npm version major -m \"Bump version to %s\" --workspaces",
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
-    "release": "npm run build && npm run test && standard-version"
+    "build": "npm run build:shared && npm run build:server && npm run build:client",
+    "build:shared": "cd shared && npm run build",
+    "build:server": "cd server && npm run build",
+    "build:client": "cd client && npm run build",
+    "start": "cd server && npm run start",
+    "start:prod": "cd server && npm run start:prod",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev"
   },
   "devDependencies": {
-    "concurrently": "^8.0.0",
-    "rimraf": "^5.0.0",
-    "conventional-changelog-cli": "^4.0.0",
-    "standard-version": "^9.0.0"
+    "concurrently": "^8.2.2"
   }
 }

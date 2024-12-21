@@ -120,25 +120,13 @@ export function AuthProvider({ children }) {
   const signUp = useCallback(async (email, password) => {
     try {
       setAuthError(null);
-      const response = await signUpWithEmail(email, password);
-      
-      if (response?.message) {
-        // Handle case where user is created but email confirmation had issues
+      const data = await signUpWithEmail(email, password);
+      if (data?.user) {
         setAuthMode('magic-link'); // Reset to magic link for next time
         setRetryCount(0);
-        setAuthError(response.message); // Show the informative message
-        return { user: response.user, message: response.message };
       }
-
-      if (response?.user) {
-        setAuthMode('magic-link'); // Reset to magic link for next time
-        setRetryCount(0);
-        return response;
-      }
-
-      throw new Error('Signup failed. Please try again.');
+      return data;
     } catch (error) {
-      console.error('Signup error in context:', error);
       setAuthError(error.message);
       throw error;
     }

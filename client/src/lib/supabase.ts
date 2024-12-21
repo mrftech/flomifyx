@@ -2,6 +2,8 @@ import { createClient, SupabaseClient, User, AuthError } from '@supabase/supabas
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const redirectUrl = import.meta.env.VITE_REDIRECT_URL || window.location.origin;
+const apiExternalUrl = import.meta.env.VITE_API_EXTERNAL_URL;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
@@ -13,6 +15,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
+    storage: window.localStorage,
+    emailAuth: {
+      redirectTo: redirectUrl,
+      autoConfirm: false,
+    },
   },
 });
 
@@ -55,23 +62,20 @@ export const signInWithEmail = async (email: string, password: string) => {
 
 export const signUpWithEmail = async (email: string, password: string) => {
   try {
-    // Get the current hostname for redirect
-    const redirectTo = import.meta.env.VITE_REDIRECT_URL || window.location.origin;
-    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: redirectTo,
+        emailRedirectTo: redirectUrl,
         data: {
-          name: email.split('@')[0], // Basic name from email
-        }
+          name: email.split('@')[0],
+        },
+        emailTemplate: 'signup',
       },
     });
     
     if (error) throw error;
     
-    // If successful but user is not confirmed, show appropriate message
     if (data?.user && !data.user.confirmed_at) {
       return {
         user: data.user,
@@ -86,6 +90,31 @@ export const signUpWithEmail = async (email: string, password: string) => {
   }
 };
 
+export const sendMagicLink = async (email: string) => {
+  try {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: redirectUrl,
+        shouldCreateUser: true,
+        data: {
+          name: email.split('@')[0],
+        },
+        emailTemplate: 'magic-link',
+      },
+    });
+
+    if (error) throw error;
+    return { 
+      success: true,
+      message: 'Check your email for the magic link.'
+    };
+  } catch (error) {
+    handleSupabaseError(error);
+    return null;
+  }
+};
+
 // Enhanced error handling with type information and specific email error handling
 export const handleSupabaseError = (error: AuthError | Error | unknown) => {
   console.error('Supabase error:', error);
@@ -93,13 +122,12 @@ export const handleSupabaseError = (error: AuthError | Error | unknown) => {
   if (error instanceof Error) {
     // Handle email service errors (500 status)
     if ('status' in error && error.status === 500) {
-      if (error.message.includes('confirmation mail')) {
+      if (error.message.includes('confirmation mail') || error.message.includes('verification email')) {
         throw new Error(
-          'Unable to send verification email. Please try signing in with email and password instead.\n\n' +
-          'If you don\'t have an account yet, you can create one with a password.'
+          'Unable to send verification email. Please try again in a few minutes or use password authentication.'
         );
       }
-      throw new Error('A server error occurred. Please try using email and password instead.');
+      throw new Error('A server error occurred. Please try again in a few minutes.');
     }
 
     // Handle specific auth errors
@@ -107,7 +135,7 @@ export const handleSupabaseError = (error: AuthError | Error | unknown) => {
       switch (error.status) {
         case 400:
           if (error.message.includes('Email rate limit exceeded')) {
-            throw new Error('Too many attempts. Please try signing in with email and password instead.');
+            throw new Error('Too many attempts. Please try again in a few minutes.');
           }
           if (error.message.includes('Email not confirmed')) {
             throw new Error('Please check your email and confirm your account before signing in.');
@@ -131,24 +159,9 @@ export const handleSupabaseError = (error: AuthError | Error | unknown) => {
           }
           throw new Error('Invalid input format.');
         case 429:
-          throw new Error('Too many requests. Please try again in a few minutes or use password authentication.');
+          throw new Error('Too many requests. Please try again in a few minutes.');
         default:
           throw new Error(error.message || 'An unexpected error occurred.');
-      }
-    }
-
-    // Handle email-specific errors
-    if (error.message.toLowerCase().includes('email')) {
-      if (error.message.includes('not found')) {
-        throw new Error('Email not found. Please check your email address or sign up.');
-      }
-      if (error.message.includes('invalid')) {
-        throw new Error('Invalid email format. Please enter a valid email address.');
-      }
-      if (error.message.includes('confirmation')) {
-        throw new Error(
-          'Unable to send verification email. Please try signing in with email and password instead.'
-        );
       }
     }
 

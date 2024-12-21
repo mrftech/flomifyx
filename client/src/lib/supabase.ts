@@ -21,7 +21,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       redirectTo: `${redirectUrl}/auth/callback`,
       autoConfirm: false,
     },
-    url: authExternalUrl,
   },
   global: {
     headers: {
@@ -107,10 +106,19 @@ export const sendMagicLink = async (email: string) => {
         data: {
           name: email.split('@')[0],
         },
+        channel: 'email',
+        type: 'magiclink',
       },
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Magic link error details:', {
+        error,
+        email,
+        redirectUrl: `${redirectUrl}/auth/callback`,
+      });
+      throw error;
+    }
     
     return { 
       success: true,
@@ -125,7 +133,12 @@ export const sendMagicLink = async (email: string) => {
 
 // Enhanced error handling with type information and specific email error handling
 export const handleSupabaseError = (error: AuthError | Error | unknown) => {
-  console.error('Supabase error:', error);
+  console.error('Supabase error details:', {
+    error,
+    type: error instanceof Error ? error.constructor.name : typeof error,
+    message: error instanceof Error ? error.message : 'Unknown error',
+    stack: error instanceof Error ? error.stack : undefined,
+  });
 
   if (error instanceof Error) {
     // Handle email service errors (500 status)

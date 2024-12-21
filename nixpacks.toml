@@ -16,7 +16,7 @@ cmds = [
 ]
 
 [start]
-cmd = 'npm start --prefix server'
+cmd = 'npm run start:prod --prefix server'
 
 [variables]
 NODE_ENV = 'production' 

@@ -422,3 +422,101 @@ async function withRetry(operation: () => Promise<any>) {
    - Implement rate limiting
    - Set up proper CORS
    - Regular security audits
+
+## Version Management
+
+### Versioning Strategy
+This project follows [Semantic Versioning](https://semver.org/) (SemVer):
+- MAJOR version (X.0.0) - incompatible API changes
+- MINOR version (0.X.0) - backwards-compatible functionality
+- PATCH version (0.0.X) - backwards-compatible bug fixes
+
+### Version Commands
+```bash
+# Patch version (bug fixes)
+npm run version:patch
+
+# Minor version (new features)
+npm run version:minor
+
+# Major version (breaking changes)
+npm run version:major
+
+# Generate/update changelog
+npm run changelog
+
+# Create a new release (includes build, test, and version bump)
+npm run release
+```
+
+### Release Process
+1. Make sure all changes are committed
+2. Run tests: `npm test`
+3. Update version:
+   ```bash
+   # For bug fixes
+   npm run version:patch
+   
+   # For new features
+   npm run version:minor
+   
+   # For breaking changes
+   npm run version:major
+   ```
+4. Update CHANGELOG.md: `npm run changelog`
+5. Review and commit changes
+6. Create a git tag: `git tag v1.x.x`
+7. Push changes and tags:
+   ```bash
+   git push origin main
+   git push origin --tags
+   ```
+8. Create a GitHub release
+9. Deploy to production
+
+### Version Control Guidelines
+1. **Commit Messages**
+   - Use conventional commits format
+   - Format: `type(scope): message`
+   - Types: feat, fix, docs, style, refactor, test, chore
+
+2. **Branch Strategy**
+   - `main` - production-ready code
+   - `develop` - development branch
+   - `feature/*` - new features
+   - `bugfix/*` - bug fixes
+   - `hotfix/*` - urgent production fixes
+
+3. **Release Tags**
+   - Use semantic versioning tags (v1.0.0)
+   - Include release notes
+   - Link to CHANGELOG.md
+
+4. **Version Files**
+   - package.json
+   - CHANGELOG.md
+   - Git tags
+   - GitHub releases
+
+### Maintaining Multiple Versions
+1. **Long-term Support (LTS)**
+   - Major versions supported for 12 months
+   - Security updates for 18 months
+   - Create branch `support/vX.Y.Z` for LTS versions
+
+2. **Hotfix Process**
+   1. Create hotfix branch from tag
+   2. Fix the issue
+   3. Update patch version
+   4. Merge to main and support branch
+   5. Create new release
+
+3. **Version Compatibility**
+   - Document breaking changes
+   - Provide migration guides
+   - Maintain API compatibility when possible
+
+4. **Documentation Versions**
+   - Tag documentation with versions
+   - Maintain separate docs for major versions
+   - Include upgrade guides

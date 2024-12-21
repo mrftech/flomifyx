@@ -1,8 +1,8 @@
-import express from 'express';
+import express, { Express, Request, Response } from 'express';
 import path from 'path';
 import cors from 'cors';
 
-const app = express();
+const app: Express = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
@@ -13,12 +13,12 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../../client/dist')));
 
 // API routes
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 
 // Serve the React app for all other routes
-app.get('*', (req, res) => {
+app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
 });
 

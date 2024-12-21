@@ -2,40 +2,23 @@
   "name": "pixellibrary",
   "version": "1.0.0",
   "private": true,
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mrftech/compox.git"
-  },
   "workspaces": [
     "shared",
-    "client",
-    "server"
+    "server",
+    "client"
   ],
   "scripts": {
-    "dev:client": "cd client && npm run dev",
-    "dev:server": "cd server && npm run dev",
-    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
-    "build": "npm run build:shared && npm run build:client",
-    "build:client": "cd client && npm run build",
+    "build": "npm run build:shared && npm run build:server && npm run build:client",
     "build:shared": "cd shared && npm run build",
-    "preview": "cd client && npm run preview",
-    "start": "cd server && npm start",
-    "install:all": "npm install && npm run install:shared && npm run install:client && npm run install:server",
-    "install:shared": "cd shared && npm install",
-    "install:client": "cd client && npm install",
-    "install:server": "cd server && npm install",
-    "clean": "rimraf node_modules */node_modules",
-    "lint": "npm run lint:shared && npm run lint:client && npm run lint:server",
-    "lint:shared": "cd shared && npm run lint",
-    "lint:client": "cd client && npm run lint",
-    "lint:server": "cd server && npm run lint",
-    "test": "npm run test:shared && npm run test:client && npm run test:server",
-    "test:shared": "cd shared && npm test",
-    "test:client": "cd client && npm test",
-    "test:server": "cd server && npm test"
+    "build:server": "cd server && npm run build",
+    "build:client": "cd client && npm run build",
+    "start": "cd server && npm run start",
+    "start:prod": "cd server && npm run start:prod",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
-    "rimraf": "^5.0.5"
+    "concurrently": "^8.2.2"
   }
 }

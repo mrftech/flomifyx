@@ -520,3 +520,146 @@ npm run release
    - Tag documentation with versions
    - Maintain separate docs for major versions
    - Include upgrade guides
+
+### Version Restoration Guide
+
+#### 1. View Available Versions
+```bash
+# List all tags (versions)
+git tag -l
+
+# View commit history with version tags
+git log --oneline --tags --no-walk --decorate
+```
+
+#### 2. Restore to a Specific Version
+
+##### Method 1: Using Git Checkout
+```bash
+# Create a new branch from a specific version
+git checkout -b restore-branch v1.0.0
+
+# Or directly checkout the version (detached HEAD)
+git checkout v1.0.0
+```
+
+##### Method 2: Using Git Reset
+```bash
+# Soft reset (keeps changes in staging)
+git reset --soft v1.0.0
+
+# Hard reset (discards all changes)
+git reset --hard v1.0.0
+```
+
+##### Method 3: Using Git Revert
+```bash
+# Create a new commit that undoes changes
+git revert --no-commit v1.1.0..HEAD
+git commit -m "Revert to version 1.0.0"
+```
+
+#### 3. Restore Dependencies
+After restoring the version:
+```bash
+# Clean existing dependencies
+npm run clean
+
+# Reinstall dependencies
+npm install
+
+# Rebuild the project
+npm run build
+```
+
+#### 4. Database Restoration
+1. Check the database schema version in `migrations/`
+2. Restore database to matching version:
+   ```bash
+   # Using Supabase CLI
+   supabase db reset --version v1.0.0
+   ```
+
+#### 5. Environment Variables
+1. Check `.env.example` from the restored version
+2. Update your `.env` files accordingly
+3. Update environment variables in Coolify
+
+#### 6. Deployment After Restoration
+1. Test locally first
+2. Update deployment configuration if needed
+3. Deploy the restored version:
+   ```bash
+   git push origin restore-branch:main --force-with-lease
+   ```
+
+#### Common Restoration Scenarios
+
+1. **Hotfix Restoration**
+   ```bash
+   # Create hotfix branch from stable version
+   git checkout -b hotfix/v1.0.1 v1.0.0
+   
+   # Make fixes and update version
+   npm run version:patch
+   
+   # Push hotfix
+   git push origin hotfix/v1.0.1
+   ```
+
+2. **Emergency Rollback**
+   ```bash
+   # Quick rollback to last stable version
+   git reset --hard v1.0.0
+   git push origin main --force-with-lease
+   ```
+
+3. **Selective Feature Restoration**
+   ```bash
+   # Cherry-pick specific features
+   git checkout -b feature-restore main
+   git cherry-pick <commit-hash>
+   ```
+
+#### Post-Restoration Checklist
+
+1. **Verify Application State**
+   - Check application functionality
+   - Verify API endpoints
+   - Test database connections
+   - Check environment variables
+
+2. **Update Documentation**
+   - Update CHANGELOG.md
+   - Document the restoration
+   - Update version numbers
+
+3. **Dependencies Check**
+   - Verify package versions
+   - Check for security updates
+   - Test compatibility
+
+4. **Deployment Verification**
+   - Test in staging environment
+   - Verify production configuration
+   - Check monitoring systems
+
+#### Restoration Best Practices
+
+1. **Before Restoration**
+   - Create backup of current state
+   - Document reason for restoration
+   - Notify team members
+   - Plan maintenance window
+
+2. **During Restoration**
+   - Follow version control guidelines
+   - Test thoroughly
+   - Keep audit logs
+   - Monitor system health
+
+3. **After Restoration**
+   - Verify all systems
+   - Update documentation
+   - Monitor for issues
+   - Plan preventive measures

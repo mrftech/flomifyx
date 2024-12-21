@@ -1,21 +1,16 @@
 {
   "name": "@pixellibrary/shared",
   "version": "1.0.0",
-  "private": true,
-  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "lint": "eslint src --ext .ts",
-    "test": "jest"
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0"
+    "typescript": "^5.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "eslint": "^8.0.0",
-    "@types/node": "^18.0.0"
+    "rimraf": "^5.0.0"
   }
 } 

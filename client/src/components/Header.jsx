@@ -4,7 +4,7 @@ import AuthModal from './AuthModal';
 import '../styles/Header.css';
 
 function Header() {
-  const { user, isModalOpen, setIsModalOpen } = useAuth();
+  const { user, isModalOpen, setIsModalOpen, signOut } = useAuth();
 
   return (
     <header className="header">
@@ -15,7 +15,7 @@ function Header() {
         {user ? (
           <div className="user-info">
             <span className="user-email">{user.email}</span>
-            <button className="auth-button" onClick={() => useAuth().signOut()}>
+            <button className="auth-button" onClick={signOut}>
               Sign Out
             </button>
           </div>

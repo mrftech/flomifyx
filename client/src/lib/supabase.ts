@@ -4,6 +4,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const redirectUrl = import.meta.env.VITE_REDIRECT_URL || window.location.origin;
 const apiExternalUrl = import.meta.env.VITE_API_EXTERNAL_URL;
+const authExternalUrl = import.meta.env.VITE_AUTH_EXTERNAL_URL;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
@@ -11,8 +12,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true,
     autoRefreshToken: true,
+    persistSession: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
     storage: window.localStorage,
@@ -20,6 +21,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       redirectTo: `${redirectUrl}/auth/callback`,
       autoConfirm: false,
     },
+    url: authExternalUrl,
   },
   global: {
     headers: {
@@ -97,21 +99,12 @@ export const signUpWithEmail = async (email: string, password: string) => {
 
 export const sendMagicLink = async (email: string) => {
   try {
-    // First check if the user exists
-    const { data: { users }, error: userError } = await supabase.auth.admin.listUsers({
-      filters: {
-        email: email,
-      },
-    });
-
-    const userExists = users && users.length > 0;
-
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         emailRedirectTo: `${redirectUrl}/auth/callback`,
-        shouldCreateUser: !userExists, // Only create if user doesn't exist
-        data: userExists ? undefined : {
+        shouldCreateUser: true,
+        data: {
           name: email.split('@')[0],
         },
       },
@@ -121,8 +114,7 @@ export const sendMagicLink = async (email: string) => {
     
     return { 
       success: true,
-      message: 'Check your email for the magic link.',
-      isNewUser: !userExists
+      message: 'Check your email for the magic link.'
     };
   } catch (error) {
     console.error('Magic link error:', error);

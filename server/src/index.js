@@ -7,6 +7,15 @@ import { productionMiddleware } from './middleware/production.js';
 
 dotenv.config();
 
+// Verify environment variables
+console.log('Environment Check:', {
+  hasApiKey: !!process.env.LEMONSQUEEZY_API_KEY,
+  hasStoreId: !!process.env.LEMONSQUEEZY_STORE_ID,
+  hasVariantId: !!process.env.LEMONSQUEEZY_VARIANT_ID,
+  hasWebhookSecret: !!process.env.LEMONSQUEEZY_WEBHOOK_SECRET,
+  clientUrl: process.env.CLIENT_URL
+});
+
 const app = express();
 const port = process.env.PORT || 3000;
 

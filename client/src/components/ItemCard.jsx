@@ -1,179 +1,124 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { itemService } from '../services/itemService';
 import { clipboardUtils } from '../utils/clipboard';
 import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
-import { FiEye } from 'react-icons/fi';
+import { useSubscription } from '../contexts/SubscriptionContext';
+import { FiEye, FiStar } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 
 function ItemCard({ item, isDropdownOpen, setActiveDropdown }) {
-  const navigate = useNavigate();
   const { user } = useAuth();
+  const { isSubscribed, startSubscription } = useSubscription();
   const { addNotification } = useNotification();
   const [copying, setCopying] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const navigate = useNavigate();
 
-  const {
-    id,
-    name,
-    description,
-    license_type,
-    thumbnail_url,
-    live_preview,
-    tags,
-    platform_data
-  } = item;
+  const isPremium = item.license_type === 'Premium';
 
-  const availablePlatforms = useMemo(() => {
-    try {
-      const platforms = typeof platform_data === 'string' 
-        ? JSON.parse(platform_data) 
-        : platform_data;
-
-      console.log('Platform data:', platforms);
-
-      const available = Object.entries(platforms || {})
-        .filter(([platform, data]) => {
-          const hasCode = data.code && data.code.trim().length > 0;
-          console.log(`${platform} has code:`, hasCode);
-          return hasCode;
-        })
-        .map(([platform]) => platform);
-
-      return available;
-    } catch (error) {
-      console.error('Error parsing platform data:', error);
-      return [];
-    }
-  }, [platform_data]);
-
-  const toggleDropdown = (e) => {
-    e.stopPropagation();
-    setActiveDropdown(isDropdownOpen ? null : item.id);
-  };
-
-  const handleCopy = async (e, platform) => {
-    e.stopPropagation();
-    
+  const handleCopy = async (platform) => {
     try {
       setCopying(true);
       await itemService.copyPlatformCode(item.id, platform);
       addNotification(`${platform} code copied successfully!`, 'success');
-      setActiveDropdown(null);
     } catch (error) {
       if (error.message.includes('premium')) {
-        addNotification(error.message, 'error');
-        setShowUpgradeModal(true);
-        setActiveDropdown(null);
-      } else if (error.message.includes('logged in')) {
-        addNotification('Please log in to copy premium items', 'error');
-        setShowLoginModal(true);
-        setActiveDropdown(null);
+        addNotification('This is a premium item. Please subscribe to copy the code.', 'info');
       } else {
-        addNotification('Failed to copy code. Please try again.', 'error');
+        addNotification(error.message, 'error');
       }
     } finally {
       setCopying(false);
     }
   };
 
-  const handleItemClick = () => {
-    navigate(`/item/${item.id}`);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isDropdownOpen && !event.target.closest('.copy-button-container')) {
-        setActiveDropdown(null);
+  const handleSubscribe = async () => {
+    try {
+      if (!user) {
+        addNotification('Please sign in to subscribe', 'info');
+        return;
       }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [isDropdownOpen, setActiveDropdown]);
+      await startSubscription();
+    } catch (error) {
+      addNotification(error.message, 'error');
+    }
+  };
 
   return (
     <div className="item-card">
-      <div 
-        className="item-card__image-container"
-        onClick={handleItemClick}
-        style={{ cursor: 'pointer' }}
-      >
-        <img 
-          src={thumbnail_url || 'https://via.placeholder.com/300x200'} 
-          alt={name} 
-          className="item-card__image"
-        />
-        
-        <span className={`license-badge license-badge--${license_type?.toLowerCase()}`}>
-          {license_type}
-        </span>
+      <div className="item-card__header">
+        <h3 className="item-card__title">
+          {item.name}
+          {isPremium && (
+            <span className="premium-badge">
+              <FiStar /> Premium
+            </span>
+          )}
+        </h3>
+      </div>
 
-        <div className="copy-button-container">
-          {availablePlatforms.length > 0 ? (
-            <>
-              <button 
-                className="copy-button"
-                onClick={toggleDropdown}
-                disabled={copying}
-              >
-                {copying ? 'Copying...' : 'Copy Code'}
-              </button>
-              
-              {isDropdownOpen && (
-                <div 
-                  className="copy-dropdown"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {availablePlatforms.map(platform => (
-                    <button
-                      key={platform}
-                      className="copy-dropdown__item"
-                      onClick={(e) => handleCopy(e, platform)}
-                    >
-                      <img 
-                        src={`/images/${platform}-icon.svg`} 
-                        alt={platform}
-                        className="platform-icon"
-                      />
-                      Copy {platform.charAt(0).toUpperCase() + platform.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
-          ) : null}
-        </div>
-
-        {live_preview && (
-          <a 
-            href={live_preview}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="preview-button"
-            title="View Live Preview"
-          >
-            <FiEye />
-          </a>
+      <div className="item-card__preview">
+        <img src={item.thumbnail_url} alt={item.name} />
+        {isPremium && !isSubscribed && (
+          <div className="premium-overlay">
+            <h3>Premium Item</h3>
+            <p>Subscribe to access this and other premium items</p>
+            <button 
+              className="unlock-button"
+              onClick={handleSubscribe}
+            >
+              Unlock Now
+            </button>
+          </div>
         )}
       </div>
 
       <div className="item-card__content">
-        <h3 
-          className="item-card__title"
-          onClick={handleItemClick}
-          style={{ cursor: 'pointer' }}
-        >
-          {name}
-        </h3>
-        <p className="item-card__description">{description}</p>
+        <p className="item-card__description">{item.description}</p>
         
         <div className="item-card__tags">
-          {tags?.map(tag => (
+          {item.tags?.map(tag => (
             <span key={tag} className="tag">
               {tag}
             </span>
+          ))}
+        </div>
+
+        <div className="item-card__actions">
+          {item.live_preview && (
+            <a
+              href={item.live_preview}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="preview-button"
+            >
+              <FiEye /> Preview
+            </a>
+          )}
+
+          <button
+            className="details-button"
+            onClick={() => navigate(`/item/${item.id}`)}
+          >
+            View Details
+          </button>
+
+          {Object.entries(item.platform_data || {}).map(([platform, data]) => (
+            data.enabled && (
+              <button
+                key={platform}
+                className={`copy-button ${copying ? 'disabled' : ''}`}
+                onClick={() => handleCopy(platform)}
+                disabled={copying || (isPremium && !isSubscribed)}
+              >
+                <img 
+                  src={`/images/${platform}-icon.svg`}
+                  alt={platform}
+                  className="platform-icon"
+                />
+                {copying ? 'Copying...' : `Copy ${platform}`}
+              </button>
+            )
           ))}
         </div>
       </div>

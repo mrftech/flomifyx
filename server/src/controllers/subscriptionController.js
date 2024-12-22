@@ -73,13 +73,13 @@ export const subscriptionController = {
         return res.status(400).json({ error: 'No signature provided' });
       }
 
-      const rawBody = JSON.stringify(req.body);
+      const rawBody = req.body.toString('utf8');
       const isValid = verifyWebhookSignature(rawBody, signature);
       if (!isValid) {
         return res.status(401).json({ error: 'Invalid signature' });
       }
 
-      const event = req.body;
+      const event = JSON.parse(rawBody);
       const eventName = event.meta.event_name;
 
       console.log('Received webhook event:', eventName);

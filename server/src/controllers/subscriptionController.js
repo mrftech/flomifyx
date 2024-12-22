@@ -70,61 +70,98 @@ export const subscriptionController = {
     try {
       const signature = req.headers['x-signature'];
       if (!signature) {
+        console.log('No signature provided in webhook request');
         return res.status(400).json({ error: 'No signature provided' });
       }
 
+      // Get raw body as string
       const rawBody = req.body.toString('utf8');
+      console.log('Received webhook payload:', rawBody);
+
       const isValid = verifyWebhookSignature(rawBody, signature);
       if (!isValid) {
+        console.log('Invalid signature in webhook request');
         return res.status(401).json({ error: 'Invalid signature' });
       }
 
+      // Parse the raw body
       const event = JSON.parse(rawBody);
       const eventName = event.meta.event_name;
+      const eventData = event.data;
 
-      console.log('Received webhook event:', eventName);
+      console.log('Processing webhook event:', eventName);
+      console.log('Event data:', JSON.stringify(eventData, null, 2));
 
       switch (eventName) {
         case 'order_created': {
-          const { user_id } = event.meta.custom_data;
-          const order = event.data;
-          console.log('Processing order:', order.id);
-          break;
-        }
-
-        case 'order_refunded': {
-          const order = event.data;
+          const { user_id } = event.meta.custom_data || {};
+          const order = eventData;
+          const attrs = order.attributes;
+          
+          console.log('Processing order:', order.id, 'for user:', user_id);
+          
+          // Store order information if needed
           await supabase
-            .from('subscriptions')
-            .update({
-              payment_status: 'refunded',
-              updated_at: new Date().toISOString()
+            .from('orders')
+            .insert({
+              order_id: order.id,
+              user_id,
+              total: attrs.total,
+              status: attrs.status,
+              created_at: attrs.created_at
             })
-            .eq('order_id', order.id);
+            .single();
           break;
         }
 
         case 'subscription_created':
         case 'subscription_updated': {
-          const { user_id } = event.meta.custom_data;
-          const subscription = event.data;
+          const subscription = eventData;
           const attrs = subscription.attributes;
+          
+          // Extract user_id from custom_data or try to find from existing subscription
+          let userId = event.meta.custom_data?.user_id;
+          
+          if (!userId) {
+            // Try to find existing subscription to get user_id
+            const { data: existingSub } = await supabase
+              .from('subscriptions')
+              .select('user_id')
+              .eq('lemon_squeezy_id', subscription.id)
+              .single();
+            
+            userId = existingSub?.user_id;
+          }
+
+          if (!userId) {
+            console.log('No user_id found for subscription:', subscription.id);
+            return res.status(400).json({ error: 'No user_id found' });
+          }
+
+          console.log('Processing subscription:', subscription.id, 'for user:', userId);
 
           await supabase
             .from('subscriptions')
             .upsert({
-              user_id,
+              user_id: userId,
               lemon_squeezy_id: subscription.id,
               order_id: attrs.order_id,
               status: attrs.status,
               plan_id: attrs.variant_id,
-              current_period_start: attrs.current_period_start,
+              current_period_start: attrs.created_at,
               current_period_end: attrs.renews_at,
               cancel_at_period_end: attrs.cancelled,
               trial_ends_at: attrs.trial_ends_at,
-              payment_status: 'paid',
+              payment_status: attrs.status === 'active' ? 'paid' : 'pending',
               last_payment_date: new Date().toISOString(),
               next_payment_date: attrs.renews_at,
+              customer_id: attrs.customer_id,
+              customer_email: attrs.user_email,
+              product_id: attrs.product_id,
+              product_name: attrs.product_name,
+              variant_name: attrs.variant_name,
+              card_brand: attrs.card_brand,
+              card_last_four: attrs.card_last_four,
               created_at: attrs.created_at,
               updated_at: attrs.updated_at
             });
@@ -132,7 +169,9 @@ export const subscriptionController = {
         }
 
         case 'subscription_cancelled': {
-          const subscription = event.data;
+          const subscription = eventData;
+          console.log('Processing subscription cancellation:', subscription.id);
+          
           await supabase
             .from('subscriptions')
             .update({
@@ -145,12 +184,16 @@ export const subscriptionController = {
         }
 
         case 'subscription_resumed': {
-          const subscription = event.data;
+          const subscription = eventData;
+          const attrs = subscription.attributes;
+          console.log('Processing subscription resume:', subscription.id);
+          
           await supabase
             .from('subscriptions')
             .update({
               status: 'active',
               cancel_at_period_end: false,
+              current_period_end: attrs.renews_at,
               updated_at: new Date().toISOString()
             })
             .eq('lemon_squeezy_id', subscription.id);
@@ -158,7 +201,9 @@ export const subscriptionController = {
         }
 
         case 'subscription_expired': {
-          const subscription = event.data;
+          const subscription = eventData;
+          console.log('Processing subscription expiration:', subscription.id);
+          
           await supabase
             .from('subscriptions')
             .update({
@@ -170,14 +215,16 @@ export const subscriptionController = {
         }
 
         case 'subscription_paused': {
-          const subscription = event.data;
+          const subscription = eventData;
           const attrs = subscription.attributes;
+          console.log('Processing subscription pause:', subscription.id);
+          
           await supabase
             .from('subscriptions')
             .update({
               status: 'paused',
-              pause_starts_at: attrs.pause_starts_at,
-              pause_resumes_at: attrs.pause_resumes_at,
+              pause_starts_at: attrs.pause?.starts_at,
+              pause_resumes_at: attrs.pause?.resumes_at,
               updated_at: new Date().toISOString()
             })
             .eq('lemon_squeezy_id', subscription.id);
@@ -185,13 +232,17 @@ export const subscriptionController = {
         }
 
         case 'subscription_unpaused': {
-          const subscription = event.data;
+          const subscription = eventData;
+          const attrs = subscription.attributes;
+          console.log('Processing subscription unpause:', subscription.id);
+          
           await supabase
             .from('subscriptions')
             .update({
               status: 'active',
               pause_starts_at: null,
               pause_resumes_at: null,
+              current_period_end: attrs.renews_at,
               updated_at: new Date().toISOString()
             })
             .eq('lemon_squeezy_id', subscription.id);
@@ -199,7 +250,9 @@ export const subscriptionController = {
         }
 
         case 'subscription_payment_failed': {
-          const subscription = event.data;
+          const subscription = eventData;
+          console.log('Processing subscription payment failure:', subscription.id);
+          
           await supabase
             .from('subscriptions')
             .update({
@@ -212,11 +265,14 @@ export const subscriptionController = {
         }
 
         case 'subscription_payment_success': {
-          const subscription = event.data;
+          const subscription = eventData;
           const attrs = subscription.attributes;
+          console.log('Processing subscription payment success:', subscription.id);
+          
           await supabase
             .from('subscriptions')
             .update({
+              status: 'active',
               payment_status: 'paid',
               last_payment_date: new Date().toISOString(),
               next_payment_date: attrs.renews_at,
@@ -230,8 +286,10 @@ export const subscriptionController = {
         }
 
         case 'subscription_payment_recovered': {
-          const subscription = event.data;
+          const subscription = eventData;
           const attrs = subscription.attributes;
+          console.log('Processing subscription payment recovery:', subscription.id);
+          
           await supabase
             .from('subscriptions')
             .update({
@@ -247,7 +305,9 @@ export const subscriptionController = {
         }
 
         case 'subscription_payment_refunded': {
-          const subscription = event.data;
+          const subscription = eventData;
+          console.log('Processing subscription payment refund:', subscription.id);
+          
           await supabase
             .from('subscriptions')
             .update({
@@ -259,12 +319,17 @@ export const subscriptionController = {
         }
 
         case 'subscription_plan_changed': {
-          const subscription = event.data;
+          const subscription = eventData;
           const attrs = subscription.attributes;
+          console.log('Processing subscription plan change:', subscription.id);
+          
           await supabase
             .from('subscriptions')
             .update({
               plan_id: attrs.variant_id,
+              product_id: attrs.product_id,
+              product_name: attrs.product_name,
+              variant_name: attrs.variant_name,
               current_period_end: attrs.renews_at,
               updated_at: new Date().toISOString()
             })
@@ -272,25 +337,11 @@ export const subscriptionController = {
           break;
         }
 
-        case 'license_key_created':
-        case 'license_key_updated': {
-          const license = event.data;
-          const attrs = license.attributes;
-          await supabase
-            .from('subscriptions')
-            .update({
-              license_key: attrs.key,
-              license_key_status: attrs.status,
-              updated_at: new Date().toISOString()
-            })
-            .eq('lemon_squeezy_id', attrs.subscription_id);
-          break;
-        }
-
         default:
           console.log('Unhandled webhook event:', eventName);
       }
 
+      console.log('Successfully processed webhook event:', eventName);
       res.json({ received: true });
     } catch (error) {
       console.error('Error handling webhook:', error);

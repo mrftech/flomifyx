@@ -341,17 +341,6 @@ function AuthModal({ isOpen, onClose }) {
                     {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
                   </button>
                 )}
-
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={toggleAuthMode}
-                >
-                  {authMode === 'magic-link' 
-                    ? 'Use Email & Password Instead'
-                    : 'Use Magic Link Instead'
-                  }
-                </button>
               </form>
             </>
           ) : (

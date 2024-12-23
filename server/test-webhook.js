@@ -1,44 +1,25 @@
 import fetch from 'node-fetch';
 
-const BASE_URL = 'https://beta.flomify.com';
-
-async function testWebhook() {
+const testWebhook = async () => {
   try {
-    console.log('\nTesting webhook endpoint...');
-    
-    // Test data
-    const testData = {
-      test: true,
-      timestamp: new Date().toISOString(),
-      data: {
-        message: "Test webhook payload"
-      }
-    };
-
-    // Send test webhook request
-    const response = await fetch(`${BASE_URL}/api/webhooks/test`, {
+    const response = await fetch('http://localhost:3000/api/webhooks/test', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify(testData)
+      body: JSON.stringify({
+        test: true,
+        message: 'Test webhook payload',
+        timestamp: new Date().toISOString()
+      })
     });
 
-    console.log('Response status:', response.status);
-    
-    const responseData = await response.text();
-    console.log('Response body:', responseData);
-
-    if (response.ok) {
-      console.log('✅ Webhook test successful!');
-    } else {
-      console.log('❌ Webhook test failed');
-    }
+    const data = await response.json();
+    console.log('Response:', data);
   } catch (error) {
-    console.error('Error testing webhook:', error.message);
+    console.error('Error:', error);
   }
-}
+};
 
-console.log('Starting webhook test...');
 testWebhook(); 

@@ -1,10 +1,15 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { itemController } from './controllers/itemController.js';
 import { subscriptionController } from './controllers/subscriptionController.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -15,7 +20,6 @@ app.use((req, res, next) => {
   console.log(`[${timestamp}] ${req.method} ${req.url}`);
   console.log('Headers:', JSON.stringify(req.headers, null, 2));
   console.log('Query:', JSON.stringify(req.query, null, 2));
-  console.log('Body:', req.body);
   console.log('IP:', req.ip);
   next();
 });
@@ -28,22 +32,11 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'x-signature']
 }));
 
-// Basic routes for testing server availability
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Server is running',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV
-  });
-});
+// Parse raw body for webhook endpoints
+app.use('/api/webhooks', express.raw({ type: 'application/json' }));
 
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
+// Parse JSON for other routes
+app.use(express.json());
 
 // API routes prefix
 app.use('/api', (req, res, next) => {
@@ -51,11 +44,22 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
-// Parse raw body for webhook endpoints
-app.use('/api/webhooks', express.raw({ type: 'application/json' }));
+// Basic routes for testing server availability
+app.get('/api', (req, res) => {
+  res.json({ 
+    message: 'API is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV
+  });
+});
 
-// Parse JSON for other routes
-app.use(express.json());
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
 
 // Test webhook endpoint
 app.post('/api/webhooks/test', (req, res) => {
@@ -125,15 +129,23 @@ app.post('/api/items', itemController.createItem);
 app.post('/api/create-checkout', subscriptionController.createCheckout);
 app.post('/api/cancel-subscription', subscriptionController.cancelSubscription);
 
-// 404 handler
-app.use((req, res) => {
-  console.log('404 Not Found:', req.method, req.url);
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../../../client/build')));
+
+// API 404 handler
+app.use('/api/*', (req, res) => {
+  console.log('API 404 Not Found:', req.method, req.url);
   res.status(404).json({ 
-    error: 'Not Found',
+    error: 'API endpoint not found',
     path: req.url,
     method: req.method,
     timestamp: new Date().toISOString()
   });
+});
+
+// The "catch-all" handler: for any request that doesn't match the ones above, send back the index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../../client/build/index.html'));
 });
 
 // Error handling
@@ -152,8 +164,8 @@ app.listen(port, '0.0.0.0', () => {
   console.log('Environment:', process.env.NODE_ENV);
   console.log('Client URL:', process.env.CLIENT_URL);
   console.log('Server routes:');
-  console.log('- GET  /');
-  console.log('- GET  /health');
+  console.log('- GET  /api');
+  console.log('- GET  /api/health');
   console.log('- POST /api/webhooks/test');
   console.log('- POST /api/webhooks/lemonsqueezy');
   console.log('- GET  /api/items');

@@ -23,7 +23,9 @@ app.use((req, res, next) => {
 // CORS configuration
 app.use(cors({
   origin: process.env.CLIENT_URL || 'https://beta.flomify.com',
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'x-signature']
 }));
 
 // Basic routes for testing server availability
@@ -43,6 +45,12 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API routes prefix
+app.use('/api', (req, res, next) => {
+  console.log(`[API] ${req.method} ${req.url}`);
+  next();
+});
+
 // Parse raw body for webhook endpoints
 app.use('/api/webhooks', express.raw({ type: 'application/json' }));
 
@@ -54,12 +62,22 @@ app.post('/api/webhooks/test', (req, res) => {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] Test webhook received`);
   console.log('Headers:', JSON.stringify(req.headers, null, 2));
-  console.log('Body:', req.body);
+  
+  let body;
+  try {
+    // Handle both raw and parsed JSON
+    body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    console.log('Parsed body:', body);
+  } catch (error) {
+    console.error('Error parsing body:', error);
+    body = req.body;
+  }
+
   res.status(200).json({ 
     received: true,
     timestamp,
     headers: req.headers,
-    body: req.body
+    body: body
   });
 });
 
@@ -133,7 +151,16 @@ app.listen(port, '0.0.0.0', () => {
   console.log(`Server running at http://0.0.0.0:${port}`);
   console.log('Environment:', process.env.NODE_ENV);
   console.log('Client URL:', process.env.CLIENT_URL);
-  console.log('LemonSqueezy variables:');
+  console.log('Server routes:');
+  console.log('- GET  /');
+  console.log('- GET  /health');
+  console.log('- POST /api/webhooks/test');
+  console.log('- POST /api/webhooks/lemonsqueezy');
+  console.log('- GET  /api/items');
+  console.log('- POST /api/items');
+  console.log('- POST /api/create-checkout');
+  console.log('- POST /api/cancel-subscription');
+  console.log('\nLemonSqueezy variables:');
   console.log('- API Key:', process.env.LEMONSQUEEZY_API_KEY ? 'Set' : 'Not set');
   console.log('- Store ID:', process.env.LEMONSQUEEZY_STORE_ID);
   console.log('- Variant ID:', process.env.LEMONSQUEEZY_VARIANT_ID);

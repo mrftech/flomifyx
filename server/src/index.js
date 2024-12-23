@@ -9,27 +9,38 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware to log all requests
+// Detailed request logging middleware
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  console.log('Headers:', req.headers);
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.url}`);
+  console.log('Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('Query:', JSON.stringify(req.query, null, 2));
+  console.log('Body:', req.body);
+  console.log('IP:', req.ip);
   next();
 });
 
 // CORS configuration
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'https://beta.flomify.com',
+  credentials: true
+}));
 
-// Health check endpoint (no auth required)
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString()
+// Basic routes for testing server availability
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV
   });
 });
 
-// Root endpoint (no auth required)
-app.get('/', (req, res) => {
-  res.json({ message: 'Server is running' });
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
 });
 
 // Parse raw body for webhook endpoints
@@ -38,11 +49,26 @@ app.use('/api/webhooks', express.raw({ type: 'application/json' }));
 // Parse JSON for other routes
 app.use(express.json());
 
-// Webhook endpoints
+// Test webhook endpoint
+app.post('/api/webhooks/test', (req, res) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] Test webhook received`);
+  console.log('Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('Body:', req.body);
+  res.status(200).json({ 
+    received: true,
+    timestamp,
+    headers: req.headers,
+    body: req.body
+  });
+});
+
+// LemonSqueezy webhook endpoint
 app.post('/api/webhooks/lemonsqueezy', async (req, res) => {
   try {
-    console.log('LemonSqueezy webhook received');
-    console.log('Headers:', req.headers);
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] LemonSqueezy webhook received`);
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
     
     // Convert raw body to string
     const rawBody = req.body.toString('utf8');
@@ -50,10 +76,14 @@ app.post('/api/webhooks/lemonsqueezy', async (req, res) => {
     
     // Parse the body
     const payload = JSON.parse(rawBody);
-    console.log('Parsed payload:', payload);
+    console.log('Parsed payload:', JSON.stringify(payload, null, 2));
     
     // Send immediate response
-    res.status(200).json({ received: true });
+    res.status(200).json({ 
+      received: true,
+      timestamp,
+      event: payload?.meta?.event_name
+    });
     
     // Process webhook asynchronously
     setImmediate(async () => {
@@ -65,16 +95,8 @@ app.post('/api/webhooks/lemonsqueezy', async (req, res) => {
     });
   } catch (error) {
     console.error('Error in webhook route:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
-});
-
-// Test webhook endpoint
-app.post('/api/webhooks/test', (req, res) => {
-  console.log('Test webhook received');
-  console.log('Headers:', req.headers);
-  console.log('Body:', req.body);
-  res.status(200).json({ received: true });
 });
 
 // Item routes
@@ -88,23 +110,32 @@ app.post('/api/cancel-subscription', subscriptionController.cancelSubscription);
 // 404 handler
 app.use((req, res) => {
   console.log('404 Not Found:', req.method, req.url);
-  res.status(404).json({ error: 'Not Found' });
+  res.status(404).json({ 
+    error: 'Not Found',
+    path: req.url,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Error handling
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: err.message,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Start server
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server running at http://0.0.0.0:${port}`);
   console.log('Environment:', process.env.NODE_ENV);
+  console.log('Client URL:', process.env.CLIENT_URL);
   console.log('LemonSqueezy variables:');
   console.log('- API Key:', process.env.LEMONSQUEEZY_API_KEY ? 'Set' : 'Not set');
   console.log('- Store ID:', process.env.LEMONSQUEEZY_STORE_ID);
   console.log('- Variant ID:', process.env.LEMONSQUEEZY_VARIANT_ID);
   console.log('- Webhook Secret:', process.env.LEMONSQUEEZY_WEBHOOK_SECRET ? 'Set' : 'Not set');
-  console.log('- Client URL:', process.env.CLIENT_URL);
 }); 

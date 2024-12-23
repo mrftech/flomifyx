@@ -71,6 +71,7 @@ export const subscriptionController = {
       const signature = req.headers['x-signature'];
       if (!signature) {
         console.log('No signature provided in webhook request');
+        console.log('Headers received:', req.headers);
         return res.status(400).json({ error: 'No signature provided' });
       }
 
@@ -81,6 +82,7 @@ export const subscriptionController = {
       const isValid = verifyWebhookSignature(rawBody, signature);
       if (!isValid) {
         console.log('Invalid signature in webhook request');
+        console.log('Signature received:', signature);
         return res.status(401).json({ error: 'Invalid signature' });
       }
 
@@ -88,11 +90,70 @@ export const subscriptionController = {
       const event = JSON.parse(rawBody);
       const eventName = event.meta.event_name;
       const eventData = event.data;
+      const testMode = event.meta.test_mode;
 
-      console.log('Processing webhook event:', eventName);
-      console.log('Event data:', JSON.stringify(eventData, null, 2));
+      console.log('Processing webhook event:', {
+        eventName,
+        testMode,
+        webhookId: event.meta.webhook_id
+      });
 
       switch (eventName) {
+        case 'subscription_created': {
+          const subscription = eventData;
+          const attrs = subscription.attributes;
+          
+          // For subscription_created, we expect custom_data in meta
+          let userId = event.meta.custom_data?.user_id;
+          
+          if (!userId) {
+            console.log('No user_id in custom_data for new subscription:', subscription.id);
+            // For testing, you might want to still process the webhook
+            if (testMode) {
+              console.log('Test mode: proceeding without user_id');
+            } else {
+              return res.status(400).json({ error: 'No user_id found in custom_data' });
+            }
+          }
+
+          console.log('Processing new subscription:', {
+            subscriptionId: subscription.id,
+            userId,
+            customerEmail: attrs.user_email,
+            status: attrs.status
+          });
+
+          await supabase
+            .from('subscriptions')
+            .upsert({
+              user_id: userId,
+              lemon_squeezy_id: subscription.id,
+              order_id: attrs.order_id,
+              status: attrs.status,
+              plan_id: attrs.variant_id,
+              current_period_start: attrs.created_at,
+              current_period_end: attrs.renews_at,
+              cancel_at_period_end: attrs.cancelled,
+              trial_ends_at: attrs.trial_ends_at,
+              payment_status: attrs.status === 'active' ? 'paid' : 'pending',
+              last_payment_date: new Date().toISOString(),
+              next_payment_date: attrs.renews_at,
+              customer_id: attrs.customer_id,
+              customer_email: attrs.user_email,
+              product_id: attrs.product_id,
+              product_name: attrs.product_name,
+              variant_name: attrs.variant_name,
+              card_brand: attrs.card_brand,
+              card_last_four: attrs.card_last_four,
+              created_at: attrs.created_at,
+              updated_at: attrs.updated_at,
+              test_mode: testMode
+            });
+
+          console.log('Successfully created subscription record');
+          break;
+        }
+
         case 'order_created': {
           const { user_id } = event.meta.custom_data || {};
           const order = eventData;
@@ -114,7 +175,6 @@ export const subscriptionController = {
           break;
         }
 
-        case 'subscription_created':
         case 'subscription_updated': {
           const subscription = eventData;
           const attrs = subscription.attributes;
@@ -342,10 +402,10 @@ export const subscriptionController = {
       }
 
       console.log('Successfully processed webhook event:', eventName);
-      res.json({ received: true });
+      res.json({ received: true, event: eventName });
     } catch (error) {
       console.error('Error handling webhook:', error);
-      res.status(500).json({ error: 'Webhook handler failed' });
+      res.status(500).json({ error: 'Webhook handler failed', details: error.message });
     }
   },
 
